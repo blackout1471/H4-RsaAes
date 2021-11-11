@@ -6,7 +6,7 @@ namespace Client
     {
         static void Main(string[] args)
         {
-            SocketConnection socketConnection = new SocketConnection("192.168.1.3", 5000);
+            SocketConnection socketConnection = new SocketConnection("192.168.1.3", 8000);
             socketConnection.Connect();
 
             socketConnection.SendMessage("Hello world");

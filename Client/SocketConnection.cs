@@ -15,9 +15,8 @@ namespace Client
 
         public SocketConnection(string _ipAdress, int _port)
         {
-            IPHostEntry ipHost = Dns.GetHostEntry(Dns.GetHostName());
-            IPAddress ipAddr = ipHost.AddressList[0];
-            endPoint = new IPEndPoint(IPAddress.Parse(_ipAdress), _port);
+            IPAddress ipAddr = IPAddress.Parse(_ipAdress);
+            endPoint = new IPEndPoint(ipAddr, _port);
             socket = new Socket(ipAddr.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
         }
 
