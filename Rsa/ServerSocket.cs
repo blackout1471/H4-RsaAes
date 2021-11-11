@@ -29,12 +29,11 @@ namespace Server
         public ReadMessageEvent OnReadMessage { get; set; }
         private static readonly ManualResetEvent mre = new ManualResetEvent(false);
 
-        public ServerSocket(int bufferSize, int port)
+        public ServerSocket(IPAddress address, int bufferSize, int port)
         {
             BufferSize = bufferSize;
             Port = port;
-            IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
-            IpAddress = ipHostInfo.AddressList.FirstOrDefault(i => i.AddressFamily == AddressFamily.InterNetwork);
+            IpAddress = address;
             IpEndPoint = new IPEndPoint(IpAddress, Port);
         }
 
