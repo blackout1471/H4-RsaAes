@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -30,14 +31,13 @@ namespace Server
             Port = port;
 
             IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
-            IpAddress = ipHostInfo.AddressList[0];
+            IpAddress = ipHostInfo.AddressList.FirstOrDefault(i => i.AddressFamily == AddressFamily.InterNetwork);
             IpEndPoint = new IPEndPoint(IpAddress, Port);
         }
 
         public void StartListening()
         {
             Socket listener = new Socket(IpAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-
             try
             {
                 listener.Bind(IpEndPoint);
@@ -67,6 +67,7 @@ namespace Server
             Socket listener = (Socket)ar.AsyncState;
             Socket handler = listener.EndAccept(ar);
             handler.BeginReceive(Buffer, 0, BufferSize, 0, new AsyncCallback(ReadCall), handler);
+            Console.WriteLine("call accepted");
         }
 
         private void ReadCall(IAsyncResult ar)

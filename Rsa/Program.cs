@@ -10,10 +10,9 @@ namespace Server
     {
         static void Main(string[] args)
         {
-            ServerSocket socket = new ServerSocket(1024, 8000);
+            ServerSocket socket = new ServerSocket(1024, 5500);
+            Console.WriteLine(socket.IpAddress);
             socket.StartListening();
-
-            Console.ReadKey();
         }
     }
 }
