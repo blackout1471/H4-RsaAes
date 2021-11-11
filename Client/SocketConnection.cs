@@ -25,25 +25,19 @@ namespace Client
             socket.Connect(endPoint);
         }
 
-        public byte[] SendMessage(string _message)
+        public void SendMessage(string _message)
         {
             byte[] messageSent = Encoding.ASCII.GetBytes(_message);
-            int byteSent = socket.Send(messageSent);
-
-            byte[] messageReceived = new byte[1024];
-
-            int byteRecv = socket.Receive(messageReceived);
-            Console.WriteLine("Message from Server -> {0}",
-                  Encoding.ASCII.GetString(messageReceived,
-                                             0, byteRecv));
-            DisConnenect();
-            return messageReceived;
+            int bytesSend = socket.Send(messageSent);
         }
 
         public void DisConnenect()
         {
-            socket.Shutdown(SocketShutdown.Both);
-            socket.Close();
+            if (socket.Connected)
+            {
+                socket.Shutdown(SocketShutdown.Both);
+                socket.Close();
+            }
         }
     }
 }
