@@ -11,5 +11,6 @@ namespace CryptoService
         public byte[] encryptedText;
         public byte[] key;
         public byte[] iv;
+        public string hash;
     }
 }
