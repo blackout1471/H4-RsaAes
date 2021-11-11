@@ -1,4 +1,8 @@
 ﻿using System;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
 
 namespace Server
 {
@@ -6,7 +10,10 @@ namespace Server
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            ServerSocket socket = new ServerSocket(1024, 8000);
+            socket.StartListening();
+
+            Console.ReadKey();
         }
     }
 }
