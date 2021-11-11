@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -8,29 +9,32 @@ namespace Server
 {
     public class ServerSocket
     {
+        // Delegates
 
-        #region Socket handler data
-        public int BufferSize { get; private set; }
-        public byte[] Buffer { get; private set; }
-        public ServerSocket WorkerSocket { get; private set; }
-        public StringBuilder Builder { get; private set; }
-        #endregion
+        public delegate void StartListeningEvent();
+        public delegate void AcceptEvent(SocketState state);
+        public delegate void ReadMessageEvent(string message);
 
+        // Props
+
+        public int BufferSize { get; set; }
         public int Port { get; private set; }
         public IPAddress IpAddress { get; private set; }
-        public IPEndPoint IpEndPoint { get; set; }
+        public IPEndPoint IpEndPoint { get; private set; }
 
+        // Events
+
+        public StartListeningEvent OnStartListening { get; set; }
+        public AcceptEvent OnAccept { get; set; }
+        public ReadMessageEvent OnReadMessage { get; set; }
         private static readonly ManualResetEvent mre = new ManualResetEvent(false);
 
         public ServerSocket(int bufferSize, int port)
         {
             BufferSize = bufferSize;
-            Buffer = new byte[BufferSize];
-            Builder = new StringBuilder();
             Port = port;
-
             IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
-            IpAddress = ipHostInfo.AddressList[0];
+            IpAddress = ipHostInfo.AddressList.FirstOrDefault(i => i.AddressFamily == AddressFamily.InterNetwork);
             IpEndPoint = new IPEndPoint(IpAddress, Port);
         }
 
@@ -46,11 +50,8 @@ namespace Server
                 while(true)
                 {
                     mre.Reset();
-
-                    Console.WriteLine("Waiting for connection");
-
+                    OnStartListening?.Invoke();
                     listener.BeginAccept(new AsyncCallback(AcceptCall), listener);
-
                     mre.WaitOne();
                 }
             }
@@ -66,27 +67,28 @@ namespace Server
 
             Socket listener = (Socket)ar.AsyncState;
             Socket handler = listener.EndAccept(ar);
-            handler.BeginReceive(Buffer, 0, BufferSize, 0, new AsyncCallback(ReadCall), handler);
+            SocketState state = new SocketState(BufferSize, handler);
+            handler.BeginReceive(state.Buffer, 0, BufferSize, 0, new AsyncCallback(ReadCall), state);
+            OnAccept?.Invoke(state);
         }
 
         private void ReadCall(IAsyncResult ar)
         {
-            Socket handler = (Socket)ar.AsyncState;
+            SocketState state = (SocketState)ar.AsyncState;
 
-            int bytesRead = handler.EndReceive(ar);
+            int bytesRead = state.WorkerSocket.EndReceive(ar);
 
             if (bytesRead > 0)
             {
-                string content = Encoding.ASCII.GetString(Buffer, 0, bytesRead);
+                string content = Encoding.ASCII.GetString(state.Buffer, 0, bytesRead);
 
                 if (content.Contains("<EOF>"))
                 {
-                    // All data read
-                    Console.WriteLine(content);
+                    OnReadMessage?.Invoke(content);
                 }
                 else
                 {
-                    handler.BeginReceive(Buffer, 0, BufferSize, 0, new AsyncCallback(ReadCall), handler);
+                    state.WorkerSocket.BeginReceive(state.Buffer, 0, BufferSize, 0, new AsyncCallback(ReadCall), state);
                 }
 
             }
