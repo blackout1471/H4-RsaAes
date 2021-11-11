@@ -36,7 +36,7 @@ namespace Client
             Console.WriteLine("Message from Server -> {0}",
                   Encoding.ASCII.GetString(messageReceived,
                                              0, byteRecv));
-
+            DisConnenect();
             return messageReceived;
         }
 
