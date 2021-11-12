@@ -27,7 +27,6 @@ namespace Server
         public StartListeningEvent OnStartListening { get; set; }
         public AcceptEvent OnAccept { get; set; }
         public ReadMessageEvent OnReadMessage { get; set; }
-        private static readonly ManualResetEvent mre = new ManualResetEvent(false);
 
         public ServerSocket(IPAddress address, int bufferSize, int port)
         {
@@ -45,51 +44,39 @@ namespace Server
             {
                 listener.Bind(IpEndPoint);
                 listener.Listen(100);
+                OnStartListening?.Invoke();
 
-                while(true)
+                while (true)
                 {
-                    mre.Reset();
-                    OnStartListening?.Invoke();
-                    listener.BeginAccept(new AsyncCallback(AcceptCall), listener);
-                    mre.WaitOne();
+                    Socket handler = listener.Accept();
+                    SocketState clientSocket = new SocketState(BufferSize, handler);
+                    OnAccept?.Invoke(clientSocket);
+
+                    while (clientSocket.WorkerSocket.Connected)
+                    {
+                        int bytes = clientSocket.WorkerSocket.Receive(clientSocket.Buffer);
+
+                        if (bytes > -1)
+                        {
+                            var plainText = Encoding.ASCII.GetString(clientSocket.Buffer);
+                            clientSocket.Builder.Append(plainText);
+
+                            if (plainText.Contains("<EOF>"))
+                            {
+                                string message = clientSocket.Builder.ToString();
+                                message = message.Replace("<EOF>", "");
+                                OnReadMessage?.Invoke(message);
+                                clientSocket.Builder.Clear();
+                                Array.Clear(clientSocket.Buffer, 0, BufferSize);
+                            }
+
+                        }
+                    }
                 }
             }
             catch (Exception)
             {
                 throw;
-            } 
-        }
-
-        private void AcceptCall(IAsyncResult ar)
-        {
-            mre.Set();
-
-            Socket listener = (Socket)ar.AsyncState;
-            Socket handler = listener.EndAccept(ar);
-            SocketState state = new SocketState(BufferSize, handler);
-            handler.BeginReceive(state.Buffer, 0, BufferSize, 0, new AsyncCallback(ReadCall), state);
-            OnAccept?.Invoke(state);
-        }
-
-        private void ReadCall(IAsyncResult ar)
-        {
-            SocketState state = (SocketState)ar.AsyncState;
-
-            int bytesRead = state.WorkerSocket.EndReceive(ar);
-
-            if (bytesRead > 0)
-            {
-                string content = Encoding.ASCII.GetString(state.Buffer, 0, bytesRead);
-
-                if (content.Contains("<EOF>"))
-                {
-                    OnReadMessage?.Invoke(content);
-                }
-                else
-                {
-                    state.WorkerSocket.BeginReceive(state.Buffer, 0, BufferSize, 0, new AsyncCallback(ReadCall), state);
-                }
-
             }
         }
     }
