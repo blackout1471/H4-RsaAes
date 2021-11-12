@@ -14,10 +14,12 @@ namespace Client
             try
             {
                 Console.Write("Insert ip: ");
-                string ipAdress = Console.ReadLine();
+                //string ipAdress = Console.ReadLine();
+                string ipAdress = "10.108.137.142";
 
                 Console.Write("Insert port: ");
-                int port = Convert.ToInt32(Console.ReadLine());
+                //int port = Convert.ToInt32(Console.ReadLine());
+                int port = 8000;
 
                 Console.WriteLine($"Connecting to {ipAdress}:{port}");
                 socketConnection = new SocketConnection(ipAdress, port);
@@ -29,16 +31,11 @@ namespace Client
 
                 byte[] key = aesEncryption.GenerateRandomNumber(32);
                 byte[] iv = aesEncryption.GenerateRandomNumber(16);
-                AesSecretDTO aesSecretDTO = new AesSecretDTO();
-                aesSecretDTO.key = key;
-                aesSecretDTO.iv = iv;
-                string aesSecretObject = JsonConvert.SerializeObject(aesSecretDTO);
-                string publicKey = @"C:\DeleteLater\RsaKeys\publicKey.xml"; // geefs public
-                byte[] rsaEncrypted = rsaEncryption.EncryptData(publicKey, Encoding.UTF8.GetBytes(aesSecretObject));
-                socketConnection.SendMessage(Convert.ToBase64String(rsaEncrypted) + "<KEY><EOF>");
+
                 //Console.Write("Path to public key: ");
                 //string publicKey = Console.ReadLine(); ; // geefs public
 
+                string publicKey = @"C:\DeleteLater\RsaKeys\publicKey.xml"; // geefs public
 
                 bool sendingData = true;
                 while (sendingData)
@@ -49,26 +46,20 @@ namespace Client
                     if (text.ToLower() == "exit")
                         sendingData = false;
 
-
                     byte[] Aesencrypted = aesEncryption.Encrypt(Encoding.UTF8.GetBytes(text), key, iv);
+                    byte[] rsaEncrypted = rsaEncryption.EncryptData(publicKey, Aesencrypted);
 
+                    AesDTO aesDTO = new AesDTO();
+                    aesDTO.Message.encryptedText = rsaEncrypted;
+                    aesDTO.Message.key = key;
+                    aesDTO.Message.iv = iv;
 
-                    //string privateKey = @"C:\DeleteLater\RsaKeys\privateKey.xml";
-                    //rsaEncryption.AssignNewKeyXml(publicKey, privateKey);
+                    string hashedMessage = JsonConvert.SerializeObject(aesDTO.Message);
 
+                    aesDTO.hash = Convert.ToBase64String(Hash.ComputeHashSha256(Encoding.UTF8.GetBytes(hashedMessage)));
+                    string fullMessage = JsonConvert.SerializeObject(aesDTO) + "<EOF>";
 
-                    AesMessageDTO aesMessageDTO = new AesMessageDTO();
-                    aesMessageDTO.encryptedText = Aesencrypted;
-                   // string hashedMessage = JsonConvert.SerializeObject(aesMessageDTO.encryptedText);
-
-                    aesMessageDTO.hash = Convert.ToBase64String(Hash.ComputeHashSha256(Encoding.UTF8.GetBytes(text)));
-
-                    string aesMessageObject = JsonConvert.SerializeObject(aesMessageDTO);
-                    socketConnection.SendMessage(aesMessageObject + "<MESSAGE><EOF>");
-
-                    //Console.WriteLine(Encoding.UTF8.GetBytes(textToSend).Length);
-                    //socketConnection.DisConnenect();
-                    //Console.WriteLine(textToSend);
+                    socketConnection.SendMessage(fullMessage);
                     Console.WriteLine("Sended");
                     Console.WriteLine("---------------------------");
                 }

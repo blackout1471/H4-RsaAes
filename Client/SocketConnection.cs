@@ -30,6 +30,10 @@ namespace Client
             byte[] messageSent = Encoding.ASCII.GetBytes(_message);
             int bytesSend = socket.Send(messageSent);
         }
+        public void SendMessage(byte[] _message)
+        {
+            int bytesSend = socket.Send(_message);
+        }
 
         public void DisConnenect()
         {
