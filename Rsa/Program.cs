@@ -1,10 +1,16 @@
-﻿using System;
+﻿using CryptoService;
+using System;
 using System.Net;
+using System.Text;
+using System.Text.Json;
 
 namespace Server
 {
     class Program
     {
+        private static AesEncryption aesEncrypter = new AesEncryption();
+        private static AesSecretDTO aes;
+
         static void Main(string[] args)
         {
             IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
@@ -39,7 +45,33 @@ namespace Server
 
         private static void OnReadMessage(string message)
         {
-            Console.WriteLine("Client: " + message);
+            message = message.Replace("<EOF>", "");
+
+            if (message.Contains("<KEY>"))
+            {
+                message = message.Replace("<KEY>", "");
+
+                byte[] rsaEncrypted = Convert.FromBase64String(message);
+                RsaEncryption rsa = new RsaEncryption();
+                byte[] byteAes = rsa.DecryptData(@"C:\temp\privateKey.xml", rsaEncrypted);
+                string aesSerialized = Encoding.UTF8.GetString(byteAes);
+
+                aes = JsonSerializer.Deserialize<AesSecretDTO>(aesSerialized);
+                Console.WriteLine("Keys exchanged!");
+                
+            }else if (message.Contains("<MESSAGE>"))
+            {
+                message = message.Replace("<MESSAGE>", "");
+
+                byte[] encryptedMessage = Convert.FromBase64String(message);
+                byte[] unencryptedMessage = aesEncrypter.Decrypt(encryptedMessage, aes.Key, aes.Iv);
+                Console.WriteLine(Encoding.UTF8.GetString(unencryptedMessage));
+            }
+            else
+            {
+                Console.WriteLine(message);
+            }
+            
         }
     }
 }

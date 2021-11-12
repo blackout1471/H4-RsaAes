@@ -56,9 +56,9 @@ namespace Server
                     {
                         int bytes = clientSocket.WorkerSocket.Receive(clientSocket.Buffer);
 
-                        if (bytes > -1)
+                        if (bytes > 0)
                         {
-                            var plainText = Encoding.ASCII.GetString(clientSocket.Buffer);
+                           var plainText = Encoding.UTF8.GetString(clientSocket.Buffer, 0, bytes);
                             clientSocket.Builder.Append(plainText);
 
                             if (plainText.Contains("<EOF>"))

@@ -27,7 +27,7 @@ namespace Client
 
         public void SendMessage(string _message)
         {
-            byte[] messageSent = Encoding.ASCII.GetBytes(_message);
+            byte[] messageSent = Encoding.UTF8.GetBytes(_message);
             int bytesSend = socket.Send(messageSent);
         }
 

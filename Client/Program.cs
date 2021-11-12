@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Text;
-using Newtonsoft.Json;
 using CryptoService;
 using System.Security.Cryptography;
+using System.Text.Json;
 
 namespace Client
 {
@@ -30,14 +30,13 @@ namespace Client
                 byte[] key = aesEncryption.GenerateRandomNumber(32);
                 byte[] iv = aesEncryption.GenerateRandomNumber(16);
                 AesSecretDTO aesSecretDTO = new AesSecretDTO();
-                aesSecretDTO.key = key;
-                aesSecretDTO.iv = iv;
-                string aesSecretObject = JsonConvert.SerializeObject(aesSecretDTO);
-                string publicKey = @"C:\DeleteLater\RsaKeys\publicKey.xml"; // geefs public
+                aesSecretDTO.Key = key;
+                aesSecretDTO.Iv = iv;
+                string aesSecretObject = JsonSerializer.Serialize(aesSecretDTO);
+                string publicKey = @"C:\temp\publicKey.xml"; // geefs public
                 byte[] rsaEncrypted = rsaEncryption.EncryptData(publicKey, Encoding.UTF8.GetBytes(aesSecretObject));
-                socketConnection.SendMessage(Convert.ToBase64String(rsaEncrypted) + "<KEY><EOF>");
-                //Console.Write("Path to public key: ");
-                //string publicKey = Console.ReadLine(); ; // geefs public
+                string data = Convert.ToBase64String(rsaEncrypted);
+                socketConnection.SendMessage(data + "<KEY><EOF>");
 
 
                 bool sendingData = true;
@@ -46,31 +45,9 @@ namespace Client
                     Console.Write("Text to send: ");
                     string text = Console.ReadLine();
 
-                    if (text.ToLower() == "exit")
-                        sendingData = false;
 
-
-                    byte[] Aesencrypted = aesEncryption.Encrypt(Encoding.UTF8.GetBytes(text), key, iv);
-
-
-                    //string privateKey = @"C:\DeleteLater\RsaKeys\privateKey.xml";
-                    //rsaEncryption.AssignNewKeyXml(publicKey, privateKey);
-
-
-                    AesMessageDTO aesMessageDTO = new AesMessageDTO();
-                    aesMessageDTO.encryptedText = Aesencrypted;
-                   // string hashedMessage = JsonConvert.SerializeObject(aesMessageDTO.encryptedText);
-
-                    aesMessageDTO.hash = Convert.ToBase64String(Hash.ComputeHashSha256(Encoding.UTF8.GetBytes(text)));
-
-                    string aesMessageObject = JsonConvert.SerializeObject(aesMessageDTO);
-                    socketConnection.SendMessage(aesMessageObject + "<MESSAGE><EOF>");
-
-                    //Console.WriteLine(Encoding.UTF8.GetBytes(textToSend).Length);
-                    //socketConnection.DisConnenect();
-                    //Console.WriteLine(textToSend);
-                    Console.WriteLine("Sended");
-                    Console.WriteLine("---------------------------");
+                    byte[] encryptedText = aesEncryption.Encrypt(Encoding.UTF8.GetBytes(text), key, iv);
+                    socketConnection.SendMessage(Convert.ToBase64String(encryptedText) + "<MESSAGE><EOF>");
                 }
             }
             catch (Exception e)

@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace CryptoService
+﻿namespace CryptoService
 {
     public class AesSecretDTO
     {
-        public byte[] key;
-        public byte[] iv;
+        public byte[] Key { get; set; }
+        public byte[] Iv { get; set; }
     }
 }
