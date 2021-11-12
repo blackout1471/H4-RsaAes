@@ -9,7 +9,7 @@ namespace Server
     class Program
     {
         static void Main(string[] args)
-        {
+        {    
             IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
             for (int i = 0; i < ipHostInfo.AddressList.Length; i++)
                 Console.WriteLine($"{i}. {ipHostInfo.AddressList[i].ToString()}");
@@ -45,7 +45,6 @@ namespace Server
             string privateKeyPath = @"C:\DeleteLater\RsaKeys\privateKey.xml";
             string publicKeyPath = @"C:\DeleteLater\RsaKeys\publicKey.xml";
             RsaEncryption rsaEncryptionXML = new RsaEncryption();
-
 
             //Console.WriteLine("Client: " + message);
             message = message.Remove(message.Length - "<EOF>".Length);
